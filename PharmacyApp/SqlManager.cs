@@ -13,7 +13,8 @@ namespace PharmacyApp
     /// </summary>
     internal class PharmacyManager : ItemManager
     {
-        public override string Text() => "Введите 1 для добавления аптеки, 2 для удаления и 0 для возврата";        
+        public override string Text() => "Введите 1 для добавления аптеки, 2 для удаления, 3 чтобы отобразить список товаров в аптеке" +
+            " и 0 для возврата";        
 
         public override void CreateItem(SqlConnection connection)
         {
@@ -47,6 +48,54 @@ namespace PharmacyApp
             command.Parameters.AddWithValue("@Name", name);
             Execute(command, connection);
         }
+        /// <summary>
+        /// Метод для отображения количество товара во всех складах аптеки
+        /// </summary>
+        /// <param name="connection">текущее соединение к БД</param>        
+        public void ShowAllGoods(SqlConnection connection)
+        {
+            Console.WriteLine("Введите наименование аптеки: ");
+            string name = Console.ReadLine();
+
+            SqlCommand command = new SqlCommand("ShowAllGoods", connection);
+            command.Parameters.AddWithValue("@Name", name);
+            command.Connection = connection;
+            command.CommandType = CommandType.StoredProcedure;
+            command.Parameters.Add("@RESULT", SqlDbType.NVarChar).Direction = ParameterDirection.Output;
+            command.Parameters["@RESULT"].Size = 255;
+            try
+            {
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    //если колиство строк больше нуля то отображаем
+                    if (reader.HasRows)
+                    {
+                        while (reader.Read())
+                        {
+                            string goodsName = reader.GetString(0);
+                            int count = reader.GetInt32(1);
+                            Console.WriteLine("\t{0} \t{1}", goodsName.TrimEnd(), count);
+                        }                        
+                    }
+                    else
+                    {
+                        //если есть возвращаемая строка то такой аптеки не существует
+                        if (command.Parameters["@RESULT"].Value != null) 
+                        {
+                            Console.WriteLine(command.Parameters["@RESULT"].Value.ToString());
+                        }
+                        else
+                        {
+                            Console.WriteLine("На складах выбранной аптеки отсутствует товар");
+                        }                                                                       
+                    }  
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
     }
     /// <summary>
     /// класс для добавления/удаления товара в БД
@@ -78,7 +127,7 @@ namespace PharmacyApp
             SqlCommand command = new SqlCommand("DeleteGoods", connection);
             command.Parameters.AddWithValue("@Name", name);
             Execute(command, connection);
-        }
+        }        
     }
     /// <summary>
     /// класс для добавления/удаления склада в БД
