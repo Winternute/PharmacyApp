@@ -71,6 +71,9 @@ namespace PharmacyApp
                             case 2:
                                 manager.DeleteItem(connection);
                                 break;
+                            case 3:
+                                (manager as PharmacyManager).ShowAllGoods(connection);
+                                break;
                             case 0:
                                 return;
                             default:
